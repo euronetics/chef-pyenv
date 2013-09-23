@@ -6,44 +6,21 @@ Array(node['pyenv']['install_pkgs']).each do |pkg|
   end
 end
 
-# Should be a dynamic user
-home_path = File.expand_path("~#{node['pyenv']['user']}")
-
-git "#{home_path}/.pyenv" do
-  repository node['pyenv']['git_url']
-  user node['pyenv']['user']
-  group node['pyenv']['user']
-  action :sync
-end
-
-pyenv_bin = "#{home_path}/.pyenv/bin"
-pyenv_version_bin = "#{home_path}/.pyenv/versions/3.3.2/bin"
-
-Array(node['pyenv']['pythons']).each do |python_ver|
-  pyenv_script "pyenv install Python #{python_ver}" do
+if node['pyenv']['user']
+  pyenv node['pyenv']['version'] do
     user node['pyenv']['user']
-    group node['pyenv']['user']
-    cwd "#{home_path}"
-    root_path "#{home_path}/.pyenv"
-    #code "pyenv install 3.3.2"
-    code <<-EOH
-    pyenv install #{python_ver}
-    pyenv rehash
-    EOH
-    not_if {File.directory?('#{home_path}/.pyenv/versions/#{python_ver}')}
   end
-end
 
-node['pyenv']['packages'].each_pair do |python_version, pkgs|
-  Array(pkgs).each do |pkg|
-    pyenv_pip pkg['name'] do
-      user node['pyenv']['user']
-      pyenv_version "#{python_version}"
-      root_path "#{home_path}/.pyenv"
-      package_name pkg['name']
-      version pkg['version']
-      action :install
-      #Should do something here...
+  node['pyenv']['packages'].each_pair do |python_version, pkgs|
+    Array(pkgs).each do |pkg|
+      pyenv_pip pkg['name'] do
+        user node['pyenv']['user']
+        pyenv_version "#{python_version}"
+        root_path "#{home_path}/.pyenv"
+        package_name pkg['name']
+        version pkg['version']
+        action :install
+      end
     end
   end
 end
